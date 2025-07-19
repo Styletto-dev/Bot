@@ -1,7 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, SlashCommandBuilder } = require('discord.js');
 const mysql = require('mysql2/promise');
-const express = require('express');
-const cors = require('cors'); // Adicionado para suporte a CORS
 
 // Configurações usando variáveis de ambiente
 const config = {
@@ -43,7 +41,6 @@ class ClanBot {
         this.initializeDatabase();
         this.setupEventHandlers();
         this.initializeSystems();
-        this.setupAPI();
     }
     
     async initializeDatabase() {
@@ -55,7 +52,7 @@ class ClanBot {
             await this.updateLoadoutsCache();
         } catch (error) {
             console.error('❌ Erro ao conectar ao banco de dados:', error);
-            process.exit(1); // Encerra o processo se não conectar ao DB
+            process.exit(1);
         }
     }
     
@@ -106,40 +103,6 @@ class ClanBot {
         } catch (error) {
             console.error('❌ Erro ao atualizar cache de loadouts:', error);
         }
-    }
-    
-    setupAPI() {
-        const api = express();
-        api.use(cors()); // Habilita CORS
-        api.use(express.json());
-        
-        // Rota de health check
-        api.get('/', (req, res) => {
-            res.json({ status: 'online', bot: this.client.user?.tag || 'starting' });
-        });
-        
-        api.get('/members', async (req, res) => {
-            try {
-                res.json(this.membersCache);
-            } catch (error) {
-                console.error('❌ Erro ao buscar membros:', error);
-                res.status(500).json({ error: 'Erro ao buscar membros' });
-            }
-        });
-
-        api.get('/loadouts', async (req, res) => {
-            try {
-                res.json(this.loadoutsCache);
-            } catch (error) {
-                console.error('❌ Erro ao buscar loadouts:', error);
-                res.status(500).json({ error: 'Erro ao buscar loadouts' });
-            }
-        });
-        
-        const port = process.env.PORT || 3000;
-        this.apiServer = api.listen(port, '0.0.0.0', () => {
-            console.log(`🌐 API rodando na porta ${port}`);
-        });
     }
     
     async registerCommands() {
@@ -594,6 +557,5 @@ bot.start();
 process.on('SIGINT', () => {
     console.log('🛑 Encerrando bot...');
     bot.client.destroy();
-    if (bot.apiServer) bot.apiServer.close();
     process.exit();
 });
